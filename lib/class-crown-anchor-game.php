@@ -84,12 +84,21 @@ class CrownAnchorGame
     }
 
     // Shortcode to display the game
-    public function display_game()
-    {
+    public function display_game() {
+        // Prevent page caching by defining DONOTCACHEPAGE
+        if (!defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+
+        // Add no-cache headers to prevent browser/CDN caching
+        nocache_headers();
+
+        // Enqueue scripts and styles
         wp_enqueue_script('ca-game-js');
         wp_enqueue_script('nostr-login');
         wp_enqueue_script('confetti');
         wp_enqueue_style('ca-game-css');
+
         return '<div id="crown-anchor-game"></div>';
     }
 
