@@ -13,6 +13,16 @@ jQuery(function($) {
         $('.ca-status, .ca-button-container, #logout-btn').hide();
     }
 
+    // Listen for nostr-login event
+    document.addEventListener('nlAuth', (e) => {
+      // type is login, signup or logout
+      if (e.detail.type === 'login' || e.detail.type === 'signup') {
+        loginWithNostr();
+      } else {
+        logout();
+      }
+    });
+
     // Handle Nostr login
     async function loginWithNostr() {
         if (window.nostr) {
