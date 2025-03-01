@@ -9,8 +9,7 @@ jQuery(function($) {
     function initGame() {
         displayGameBoard();
         $('#login-btn').on('click', doNostrLogin);
-        $('#logout-btn').on('click', logout);
-        $('.ca-status, .ca-button-container, #logout-btn').hide();
+        $('.ca-status, .ca-button-container').hide();
     }
 
     // Handle nostr-login events
@@ -81,9 +80,8 @@ jQuery(function($) {
         html += '<button id="login-btn">Login with Nostr</button>';
         html += '</div>';
         html += '<div class="ca-status">';
-        html += '<p><strong>Credits:</strong> <span id="credits">0</span>';
-        html += '<button id="deposit-btn">Deposit</button>';
-        html += '<button id="logout-btn">Logout</button></p>';
+        html += '<p><strong>Credits:</strong> <span id="credits">0</span>&nbsp;&nbsp;';
+        html += '<button id="deposit-btn">Deposit</button></p>';
         html += '<p>Next Result Hash: <span id="result-hash">Loading...</span></p>';
         html += '</div>';
         html += '<div class="ca-game-container">';
@@ -122,7 +120,7 @@ jQuery(function($) {
     function activateGameBoard() {
         // Update UI
         $('#login-btn').hide();
-        $('.ca-status, .ca-button-container, #logout-btn').show();
+        $('.ca-status, .ca-button-container').show();
         $('#result-hash').text(resultHash.substr(0, 24));
         $('#credits').text(credits);
 

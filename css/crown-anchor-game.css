@@ -1,7 +1,12 @@
+body {
+    /* disable double-tap zooming while still allowing single-tap interactions */
+    touch-action: manipulation;
+}
+
 #crown-anchor-game {
     background-color: #001819;
     color: #fff;
-    padding: 20px;
+    padding: 5px;
 }
 
 #crown-anchor-game p {
@@ -76,10 +81,6 @@ button {
     color: #000;
     border: none;
     cursor: pointer;
-}
-
-#deposit-btn, #logout-btn {
-    margin-left: 2em;
 }
 
 .strong {
