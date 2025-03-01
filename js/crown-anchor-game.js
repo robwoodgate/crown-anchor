@@ -8,23 +8,26 @@ jQuery(function($) {
     // Initialize the game with login
     function initGame() {
         displayGameBoard();
-        $('#login-btn').on('click', loginWithNostr);
+        $('#login-btn').on('click', doNostrLogin);
         $('#logout-btn').on('click', logout);
         $('.ca-status, .ca-button-container, #logout-btn').hide();
     }
 
-    // Listen for nostr-login event
+    // Handle nostr-login events
+    function doNostrLogin() {
+        document.dispatchEvent(new CustomEvent('nlLaunch', { detail: 'welcome' }));
+    }
     document.addEventListener('nlAuth', (e) => {
       // type is login, signup or logout
       if (e.detail.type === 'login' || e.detail.type === 'signup') {
-        loginWithNostr();
+        login();
       } else {
         logout();
       }
     });
 
     // Handle Nostr login
-    async function loginWithNostr() {
+    async function login() {
         if (window.nostr) {
             try {
                 // HTTP Auth event
@@ -39,7 +42,7 @@ jQuery(function($) {
                 }); // Use Nostr API to sign
                 pubkey = event.pubkey; // that signed HTTP Auth
                 $('#login-btn').text('One moment... getting details');
-                $('#login-btn').off('click', loginWithNostr);
+                $('#login-btn').off('click', doNostrLogin);
                 $.post(caAjax.ajax_url, {
                     action: 'ca_login',
                     event: btoa(JSON.stringify(event)),
@@ -49,6 +52,7 @@ jQuery(function($) {
                         credits = parseFloat(response.data.credits) || 0;
                         resultHash = response.data.result_hash || '';
                         activateGameBoard();
+                        console.log('logged in!');
                     } else {
                         alert('Login failed: ' + (response.data || 'Unknown error'));
                     }
