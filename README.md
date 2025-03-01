@@ -49,7 +49,7 @@ composer install # (maybe you need to add `--ignore-platform-reqs` if it asks yo
 To build a .zip file of the WordPress plugin run:
 
 ```bash
-./build.sh # this builds a `crown-anchor.zip`
+./build.sh # this builds a `crown-anchor-game.zip`
 ```
 
 Then upload and activate the plugin through the WordPress Plugin admin panel.
