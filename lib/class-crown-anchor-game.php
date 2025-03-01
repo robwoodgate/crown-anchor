@@ -46,11 +46,10 @@ class CrownAnchorGame
     // Enqueue scripts
     public function enqueue_assets()
     {
-        wp_enqueue_script('jquery');
-        wp_enqueue_script('ca-game-js', CAGAME_URL.'js/crown-anchor-game.js', ['jquery'], CAGAME_VERSION, true);
-        wp_enqueue_script('nostr-login', 'https://www.unpkg.com/nostr-login@latest/dist/unpkg.js', [], 'latest', true);
-        wp_enqueue_script('confetti', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], '1.9.3', false); // NB: head
-        wp_enqueue_style('ca-game-css', CAGAME_URL.'css/crown-anchor-game.css', [], CAGAME_VERSION);
+        wp_register_script('ca-game-js', CAGAME_URL.'js/crown-anchor-game.js', ['jquery'], CAGAME_VERSION, true);
+        wp_register_script('nostr-login', 'https://www.unpkg.com/nostr-login@latest/dist/unpkg.js', [], 'latest', true);
+        wp_register_script('confetti', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], '1.9.3', false); // NB: head
+        wp_register_style('ca-game-css', CAGAME_URL.'css/crown-anchor-game.css', [], CAGAME_VERSION);
         wp_localize_script('ca-game-js', 'caAjax', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('ca_game_nonce'),
@@ -67,7 +66,7 @@ class CrownAnchorGame
                     'data-methods' => 'connect,extension',
                     // 'data-start-screen' => 'welcome-login',
                     'data-theme' => 'ocean',
-                    'data-dark-mode' => true,
+                    'data-dark-mode' => 'true',
                     'data-title' => 'Login to Crown and Anchor',
                     'data-description' => 'A provably fair Crown and Anchor game integrated with Nostr, Lightning, and Cashu.'
                 ];
@@ -87,6 +86,10 @@ class CrownAnchorGame
     // Shortcode to display the game
     public function display_game()
     {
+        wp_enqueue_script('ca-game-js');
+        wp_enqueue_script('nostr-login');
+        wp_enqueue_script('confetti');
+        wp_enqueue_style('ca-game-css');
         return '<div id="crown-anchor-game"></div>';
     }
 
