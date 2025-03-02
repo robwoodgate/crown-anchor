@@ -190,7 +190,7 @@ jQuery(function($) {
                             var payoutMultiplier = matches > 0 ? matches + 1 : 0;
                             var payout = payoutMultiplier * bets[symbol];
                             var profit = payout - bets[symbol];
-                            betOutcomes += 'Bet on ' + symbolNames[symbol] + ' (Bet: ' + bets[symbol] + '): ' + matches + ' matches - ';
+                            betOutcomes += 'Bet ' + bets[symbol] + ' on ' + symbolNames[symbol] + ': Matched: ' + matches + ' - ';
                             if (matches > 0) {
                                 betOutcomes += 'Win ' + payout + ' (' + profit + ' profit + ' + bets[symbol] + ' stake)';
                             } else {
