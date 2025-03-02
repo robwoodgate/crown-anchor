@@ -1,5 +1,5 @@
 #!/bin/sh
-pkg="crown-anchor-game.zip" # plugin name
+pkg="crown-anchor.zip" # plugin name
 
 echo "Building packages..."
 composer install --no-dev

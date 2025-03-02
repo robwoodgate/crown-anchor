@@ -40,7 +40,7 @@ jQuery(function($) {
                     content: ""
                 }); // Use Nostr API to sign
                 pubkey = event.pubkey; // that signed HTTP Auth
-                $('#login-btn').text('One moment... getting details');
+                $('#login-btn').text('One moment...');
                 $('#login-btn').off('click', doNostrLogin);
                 $.post(caAjax.ajax_url, {
                     action: 'ca_login',
@@ -255,8 +255,9 @@ jQuery(function($) {
         modalHtml += '<div id="close-modal">X</div>';
         modalHtml += '<p class="strong">Add Credits</p>';
         modalHtml += '<div id="ca-deposit-select">';
-        modalHtml += '<p>1 credit = 10 sats, min 10 sats deposit</p>';
-        modalHtml += '<label>Amount (sats): <input type="number" id="deposit-amount" min="10" step="10" value="1000"></label>';
+        modalHtml += '<div>1 credit = 10 sats</div>';
+        modalHtml += '<input id="deposit-amount" type="number" min="10" step="10" placeholder="Enter amount (sats)">';
+        modalHtml += '<div id="credit-display">Credits: 0</div>';
         modalHtml += '<div><button id="ca-pay-button">Pay Now</button></div>';
         modalHtml += '</div>';
         modalHtml += '<div id="ca-pay" style="display:none;">';
@@ -270,22 +271,16 @@ jQuery(function($) {
 
         // Validate deposit amount
         const $amount = $("#deposit-amount");
+        const $creditDisplay = $("#credit-display");
         $amount.on('input', function() {
-            const min = parseInt($(this).attr('min')) || 10;
-            const step = parseInt($(this).attr('step')) || 10;
             let value = parseInt($(this).val(), 10);
             if (isNaN(value)) {
-                $(this).val(1000); // Reset to default
-                return;
-            }
-            // Enforce min
-            if (value < min) {
-                $(this).val(min);
-            }
-            // Snap to nearest step value if needed
-            const remainder = (value - min) % step;
-            if (remainder !== 0 && value >= min) {
-                $(this).val(value - remainder); // Snap down
+                $(this).val(''); // Clear invalid input
+            } else if (value < 0) {
+                $(this).val(0); // No negative deposits
+            } else {
+                // Live preview during typing
+                $creditDisplay.text(`Credits: ${Math.floor(value / 10)}`);
             }
         });
 
