@@ -164,9 +164,11 @@ class CrownAnchorGame
         $player = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.CAGAME_TABLE.' WHERE pubkey = %s', $event->pubkey));
         if (!$player) {
             $game_data = $this->ca_generate_game_data();
+            $welcome_credits = (defined('CAGAME_WELCOME_CREDITS'))
+                ? (int) CAGAME_WELCOME_CREDITS : 0;
             $wpdb->insert(CAGAME_TABLE, [
                 'pubkey' => $event->pubkey,
-                'credits' => 100.00, // Starting credits
+                'credits' => $welcome_credits, // Starting credits
                 'current_result_hash' => $game_data['result_hash'],
                 'current_rolls' => $game_data['rolls'],
                 'current_randomhash' => $game_data['randomhash'],

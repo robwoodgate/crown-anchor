@@ -60,6 +60,16 @@ You can then add the game to a page using the following shortcode.
 [crown_anchor_game]
 ```
 
+### Welcome Credits
+
+If you want to offer new players some credits when they first login, you can set the `CAGAME_WELCOME_CREDITS` constant in your `wp-config.php` file.
+
+For example, to grant 50 credits:
+
+```
+/** Crown and Anchor Game - Welcome Credits for new users */
+define('CAGAME_WELCOME_CREDITS', 50);
+```
 
 ## Requirements
 
