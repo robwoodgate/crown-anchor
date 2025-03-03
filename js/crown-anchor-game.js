@@ -232,6 +232,9 @@ jQuery(function($) {
                     $('#credits').text(credits);
                     resultHash = newResultHash;
                     $('#result-hash').text(resultHash.substr(0, 24));
+                    if (winnings > stake) {
+                        doConfettiBomb(); // Celebrate
+                    }
 
                     // Reset bets
                     for (var i = 1; i <= 6; i++) {
