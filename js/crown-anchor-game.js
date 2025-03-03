@@ -258,7 +258,7 @@ jQuery(function($) {
         modalHtml += '<div id="close-modal">X</div>';
         modalHtml += '<p class="strong">Add Credits</p>';
         modalHtml += '<div id="ca-deposit-select">';
-        modalHtml += '<div>1 credit = 10 sats</div>';
+        modalHtml += '<div id="ca-deposit-pricing">1 credit = 10 sats</div>';
         modalHtml += '<input id="deposit-amount" type="number" min="10" step="10" placeholder="Enter amount (sats)">';
         modalHtml += '<div id="credit-display">Credits: 0</div>';
         modalHtml += '<div><button id="ca-pay-button">Pay Now</button></div>';
@@ -301,8 +301,19 @@ jQuery(function($) {
         const $paybutton = $("#ca-pay-button");
         $paybutton.on("click", async (e)=> {
             e.preventDefault();
+            // Get lowest whole amount
+            const amount = parseInt(Math.floor($amount.val() / 10) * 10);
+            if (!amount) {
+                alert('Please deposit at least 10 sats for 1 credit');
+                $amount.val(amount);
+                return;
+            }
+            if (amount < $amount.val()) {
+                $('#ca-deposit-pricing').text(`Rounding down: ${$amount.val()}->${amount}`);
+                $amount.val(amount);
+            }
             // Get lightning payment request or credits
-            const response = await createInvoice($amount.val(), 'Crown & Anchor Game');
+            const response = await createInvoice(amount, 'Crown & Anchor Game');
             if (response.credits !== undefined) {
                 credits = response.credits;
                 $('#credits').text(credits);
