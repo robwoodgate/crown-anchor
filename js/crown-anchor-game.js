@@ -264,6 +264,7 @@ jQuery(function($) {
         modalHtml += '<div><button id="ca-pay-button">Pay Now</button></div>';
         modalHtml += '</div>';
         modalHtml += '<div id="ca-pay" style="display:none;">';
+        modalHtml += '<div id="ca-invoice-total"></div>';
         modalHtml += '<p><a id="ca-invoice-link"><img id="ca-invoice-img"/></a></p>';
         modalHtml += '<p><button id="ca-invoice-copy" class="button">Copy</button>';
         modalHtml += '<p><a href="" id="ca-cashu-link" target="_blank">Pay with Cashu ecash?</a>';
@@ -301,7 +302,7 @@ jQuery(function($) {
         const $paybutton = $("#ca-pay-button");
         $paybutton.on("click", async (e)=> {
             e.preventDefault();
-            // Get lowest whole amount
+            // Get lowest whole amount (10 sats per credit)
             const amount = parseInt(Math.floor($amount.val() / 10) * 10);
             if (!amount) {
                 alert('Please deposit at least 10 sats for 1 credit');
@@ -327,6 +328,7 @@ jQuery(function($) {
                 const img = 'https://quickchart.io/chart?cht=qr&chs=200x200&chl='+pr;
                 $("#ca-pay").show();
                 $('#ca-deposit-select').hide();
+                $("#ca-invoice-total").text(`Total: ${amount} sats`);
                 $("#ca-invoice-link").attr("href", `lightning:${pr}`);
                 $("#ca-invoice-img").attr("src", img);
                 $('#ca-cashu-link').attr('href', `https://www.nostrly.com/cashu-redeem/?to=${pr}`);
