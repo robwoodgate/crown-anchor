@@ -21,6 +21,10 @@ class CrownAnchorGame
         add_action('wp_ajax_nopriv_ca_logout', [$this, 'ajax_logout']);
         add_action('wp_ajax_ca_play_game', [$this, 'ajax_play_game']);
         add_action('wp_ajax_nopriv_ca_play_game', [$this, 'ajax_play_game']);
+        add_action('init', function() {
+            // Tell LiteSpeed Cache to treat our nonce as an ESI block
+            do_action('litespeed_nonce', 'ca_game_nonce');
+        });
     }
 
     // Database setup

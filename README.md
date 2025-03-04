@@ -80,7 +80,7 @@ Your WordPress site MUST use SSL (https://) for your browser to be able to calcu
 If you wish to take payments, you need to install and configure the [Bitcoin Lightning Publisher for WordPress plugin](https://github.com/getAlby/lightning-publisher-wordpress/) for payment integation.
 
 ### Caching Considerations
-The `[crown_anchor_game]` shortcode page uses dynamic nonces for AJAX requests. To prevent caching issues, the plugin sets `DONOTCACHEPAGE` and no-cache headers. Ensure your caching plugin (e.g., WP Rocket, W3 Total Cache) respects `DONOTCACHEPAGE`, or exclude the shortcode page URL (e.g., `/game-page/`) from caching.
+The `[crown_anchor_game]` shortcode page uses dynamic nonces for AJAX requests. To prevent caching issues, the plugin sets `DONOTCACHEPAGE` and no-cache headers. Ensure your caching plugin (e.g., WP Rocket, W3 Total Cache) respects `DONOTCACHEPAGE`, or exclude the shortcode page URL (e.g., `/game-page/`) from caching. If you use Litespeed Cache, it should just work ok.
 
 ### Server-Side Caching
 If your server uses caching (e.g., Nginx, Varnish), exclude the shortcode page URL (e.g., `/game-page/`) from caching to ensure the nonce remains fresh.
