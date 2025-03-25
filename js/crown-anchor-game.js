@@ -8,22 +8,9 @@ jQuery(function($) {
     // Initialize the game with login
     function initGame() {
         displayGameBoard();
-        $('#login-btn').on('click', doNostrLogin);
+        $('#login-btn').on('click', login);
         $('.ca-status, .ca-button-container').hide();
     }
-
-    // Handle nostr-login events
-    function doNostrLogin() {
-        document.dispatchEvent(new CustomEvent('nlLaunch', { detail: 'welcome' }));
-    }
-    document.addEventListener('nlAuth', (e) => {
-      // type is login, signup or logout
-      if (e.detail.type === 'login' || e.detail.type === 'signup') {
-        login();
-      } else {
-        logout();
-      }
-    });
 
     // Handle Nostr login
     async function login() {
@@ -41,7 +28,7 @@ jQuery(function($) {
                 }); // Use Nostr API to sign
                 pubkey = event.pubkey; // that signed HTTP Auth
                 $('#login-btn').text('One moment...');
-                $('#login-btn').off('click', doNostrLogin);
+                $('#login-btn').off('click', login);
                 $.post(caAjax.ajax_url, {
                     action: 'ca_login',
                     event: btoa(JSON.stringify(event)),

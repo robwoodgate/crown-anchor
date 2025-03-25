@@ -51,7 +51,7 @@ class CrownAnchorGame
     public function enqueue_assets()
     {
         wp_register_script('ca-game-js', CAGAME_URL.'js/crown-anchor-game.js', ['jquery'], CAGAME_VERSION, true);
-        wp_register_script('nostr-login', 'https://www.unpkg.com/nostr-login@latest/dist/unpkg.js', [], 'latest', true);
+        wp_register_script('window-nostr', 'https://unpkg.com/window.nostr.js/dist/window.nostr.js', [], 'latest', true);
         wp_register_script('confetti', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], '1.9.3', false); // NB: head
         wp_register_style('ca-game-css', CAGAME_URL.'css/crown-anchor-game.css', [], CAGAME_VERSION);
         wp_localize_script('ca-game-js', 'caAjax', [
@@ -59,32 +59,6 @@ class CrownAnchorGame
             'nonce' => wp_create_nonce('ca_game_nonce'),
             'plugin_url' => CAGAME_URL,
         ]);
-
-        // Add data-* attributes using script_loader_tag filter
-        add_filter('script_loader_tag', 'adjust_attributes', 10, 3);
-        function adjust_attributes($tag, $handle, $src) {
-            // nostr-login script
-            if ($handle === 'nostr-login') {
-                // Add data-* attributes
-                $attributes = [
-                    'data-methods' => 'connect,extension',
-                    // 'data-start-screen' => 'welcome-login',
-                    'data-theme' => 'ocean',
-                    'data-dark-mode' => 'true',
-                    'data-title' => 'Login to Crown and Anchor',
-                    'data-description' => 'A provably fair Crown and Anchor game integrated with Nostr, Lightning, and Cashu.'
-                ];
-
-                $attr_string = '';
-                foreach ($attributes as $key => $value) {
-                    $attr_string .= " $key=\"" . esc_attr($value) . "\"";
-                }
-
-                // Replace the original script tag with one containing data-* attributes
-                $tag = str_replace('<script ', "<script {$attr_string} ", $tag);
-            }
-            return $tag;
-        }
     }
 
     // Shortcode to display the game
@@ -99,7 +73,7 @@ class CrownAnchorGame
 
         // Enqueue scripts and styles
         wp_enqueue_script('ca-game-js');
-        wp_enqueue_script('nostr-login');
+        wp_enqueue_script('window-nostr');
         wp_enqueue_script('confetti');
         wp_enqueue_style('ca-game-css');
 

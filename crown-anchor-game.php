@@ -4,7 +4,7 @@
 Plugin Name: Crown and Anchor Game
 Plugin URI: https://github.com/robwoodgate/crown-anchor
 Description: A provably fair Crown and Anchor game integrated with Nostr, Lightning, and Cashu.
-Version: 2.0.2
+Version: 2.1.0
 Author: Rob Woodgate
 Author URI: https://www.cogmentis.com
 License: GPL-3.0
@@ -29,7 +29,7 @@ define('CAGAME_PATH', plugin_dir_path(__FILE__));
 define('CAGAME_URL', plugin_dir_url(__FILE__));
 define('CAGAME_SLUG', plugin_basename(__DIR__));
 define('CAGAME_FILE', plugin_basename(__FILE__));
-define('CAGAME_VERSION', '2.0.2');
+define('CAGAME_VERSION', '2.1.0');
 
 // * Handle activation tasks
 \register_activation_hook(__FILE__, function (): void {
