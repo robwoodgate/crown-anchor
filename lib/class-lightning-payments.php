@@ -13,6 +13,7 @@ use swentel\nostr\Key\Key;
 class LightningPayments
 {
     private const SATS_PER_CREDIT = 10;
+    private const MIN_SATS = 100; // the smallest payment Paid in Sats takes
 
     public function init()
     {
@@ -57,8 +58,8 @@ class LightningPayments
 
         // 1 credit = 10 sats
         $credits = intdiv(max(0, (int) ($_POST['amount'] ?? 0)), self::SATS_PER_CREDIT);
-        if ($credits < 1) {
-            wp_send_json_error(['message' => 'Please deposit at least 10 sats for 1 credit']);
+        if ($credits * self::SATS_PER_CREDIT < self::MIN_SATS) {
+            wp_send_json_error(['message' => 'Please deposit at least 100 sats for 10 credits']);
         }
 
         $payment = $this->paidinsats('POST', '/api/v1/payments', [

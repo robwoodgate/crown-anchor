@@ -245,8 +245,8 @@ jQuery(function($) {
         modalHtml += '<div id="close-modal">X</div>';
         modalHtml += '<p class="strong">Add Credits</p>';
         modalHtml += '<div id="ca-deposit-select">';
-        modalHtml += '<div id="ca-deposit-pricing">1 credit = 10 sats</div>';
-        modalHtml += '<input id="deposit-amount" type="number" min="10" step="10" placeholder="Enter amount (sats)">';
+        modalHtml += '<div id="ca-deposit-pricing">1 credit = 10 sats (minimum 100 sats)</div>';
+        modalHtml += '<input id="deposit-amount" type="number" min="100" step="10" placeholder="Enter amount (sats)">';
         modalHtml += '<div id="credit-display">Credits: 0</div>';
         modalHtml += '<div><button id="ca-pay-button">Pay Now</button></div>';
         modalHtml += '</div>';
@@ -291,8 +291,8 @@ jQuery(function($) {
             e.preventDefault();
             // Get lowest whole amount (10 sats per credit)
             const amount = parseInt(Math.floor($amount.val() / 10) * 10);
-            if (!amount) {
-                alert('Please deposit at least 10 sats for 1 credit');
+            if (!(amount >= 100)) {
+                alert('Please deposit at least 100 sats for 10 credits');
                 $amount.val(amount);
                 return;
             }

@@ -79,7 +79,7 @@ Your WordPress site MUST use SSL (https://) for your browser to be able to calcu
 
 ### Taking payments
 
-Credits cost 10 sats each and are paid for with a Lightning invoice from [Paid in Sats](https://paidinsats.com). Create an account, make an API key in the dashboard (Developer section), and add it to your `wp-config.php` file:
+Credits cost 10 sats each (minimum top-up 100 sats) and are paid for with a Lightning invoice from [Paid in Sats](https://paidinsats.com). Create an account, make an API key in the dashboard (Developer section), and add it to your `wp-config.php` file:
 
 ```
 /** Crown and Anchor Game - Paid in Sats API key */
