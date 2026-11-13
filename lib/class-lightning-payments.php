@@ -112,15 +112,21 @@ class LightningPayments
             wp_send_json_error(['message' => 'Invoice not found or expired.']);
         }
 
-        // add_option fails if the row exists, so a payment is credited once.
+        // The unique option name makes this insert succeed once per payment.
         // ponytail: one option row per paid top-up; use a table if volume matters
+        global $wpdb;
         $paid_key = 'cagame_paid_'.$token;
-        if (!add_option($paid_key, time(), '', false)) {
+        $first = $wpdb->query($wpdb->prepare(
+            "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')",
+            $paid_key,
+            (string) time()
+        ));
+        if (1 !== $first) {
             wp_send_json_error(['message' => 'This payment has already been credited.']);
         }
         $credits = $this->add_credits($pubkey, intdiv((int) $payment['total_sats'], self::SATS_PER_CREDIT));
         if (null === $credits) {
-            delete_option($paid_key);
+            $wpdb->delete($wpdb->options, ['option_name' => $paid_key]);
             wp_send_json_error(['message' => 'Player not found.']);
         }
 
