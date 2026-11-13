@@ -1,18 +1,19 @@
 <?php
 
 /**
- * Responsible for lightning payments via Bitcoin and Lightning Publisher.
+ * Responsible for lightning payments via the Paid in Sats API.
  *
- * @see https://github.com/getAlby/lightning-publisher-wordpress
+ * @see https://paidinsats.com
  */
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
-use Firebase\JWT;
 use swentel\nostr\Key\Key;
 
 class LightningPayments
 {
+    private const SATS_PER_CREDIT = 10;
+
     public function init()
     {
         // Checkout and raise invoice
@@ -24,15 +25,10 @@ class LightningPayments
     }
 
     /**
-     * Creates a lightning invoice.
+     * Creates a lightning invoice for credits, via Paid in Sats.
+     * Without an API key, payments are off and the top-up is free.
      *
-     * @return JSON Lightning invoice
-     *
-     * {
-     *   amount":65000,
-     *   "token":"abc123...",
-     *   "payment_request":"lnbc1..."
-     * }
+     * @return JSON {"amount":100,"token":"abc123...","payment_request":"lnbc1...","payment_hash":"..."}
      */
     public function ajax_create_invoice()
     {
@@ -42,105 +38,57 @@ class LightningPayments
             wp_send_json_error(['message' => 'Nonce verification failed']);
         }
 
-        // Sanitize input
-        $amount = intval($_POST['amount']);
-        $comment = sanitize_text_field(wp_unslash($_POST['comment'] ?? ''));
-        $pubkey = $this->sanitize_pubkey($_POST['pubkey'] ?? ''); // now hex
-
         // Validate pubkey
+        $pubkey = $this->sanitize_pubkey($_POST['pubkey'] ?? ''); // now hex
         if (empty($pubkey)) {
             wp_send_json_error(['message' => 'Invalid public key']);
         }
 
-        // Check if BLN Publisher is active and configured
-        $bln_active = defined('BLN_PUBLISHER_PAYWALL_JWT_KEY')
-        && !empty(BLN_PUBLISHER_PAYWALL_JWT_KEY)
-        && is_plugin_active('bitcoin-lightning-publisher/bln-publisher.php');
-
-        if ($bln_active) {
-            // Prepare invoice request payload
-            $payload = [
-                'amount' => $amount,
-                'currency' => 'btc',
-                'memo' => $comment,
-            ];
-
-            // Use WP REST API internally
-            // @see https://wpscholar.com/blog/internal-wp-rest-api-calls/
-            // We catch exceptions as the endpoint contacts an external LN server
-            try {
-                $request = new WP_REST_Request('POST', '/lnp-alby/v1/invoices');
-                $request->set_body_params($payload);
-                $response = rest_do_request($request);
-                if ($response->is_error()) {
-                    wp_send_json_error(['message' => $response->get_error_message()]);
-                }
-                $server = rest_get_server();
-                $data = $server->response_to_data($response, false); // array
-            } catch (ClientException $e) {
-                $response = $e->getResponse();
-                error_log(__METHOD__.' - Error: '.$response->getBody()->getContents());
-                wp_send_json_error(['message' => 'There was a problem creating the invoice. Please contact us']);
-            } catch (Exception $e) {
-                error_log(__METHOD__.' - Error: '.$e->getMessage());
-                wp_send_json_error(['message' => 'There was a problem creating the invoice. Please contact us']);
+        if (!defined('CAGAME_PIS_API_KEY') || empty(CAGAME_PIS_API_KEY)) {
+            $credits = $this->add_credits($pubkey, 100);
+            if (null === $credits) {
+                wp_send_json_error(['message' => 'Player not found.']);
             }
-
-            // Decode the $data['token'] to get payment hash (r_hash), as this is
-            // a primary index in the lightning publisher payments table
-            // Token internal structure is:
-            // [
-            //     "post_id" => "0",
-            //     "amount" => "100",
-            //     "invoice_id" => "ceb1b642b...",
-            //     "r_hash" => "ceb1b642b...",
-            //     "exp" => "1740755651"
-            // ]
-            try {
-                $jwt = JWT\JWT::decode($data['token'], new JWT\Key(BLN_PUBLISHER_PAYWALL_JWT_KEY, BLN_PUBLISHER_PAYWALL_JWT_ALGORITHM));
-                // error_log(print_r($jwt, true));
-            } catch (Exception $e) {
-                error_log(__METHOD__.' - Error: '.$e->getMessage());
-                wp_send_json_error(['message' => 'There was a problem creating the invoice. Please contact us']);
-            }
-
-            // Tweak the data
-            unset($data['post_id']); // we don't use post_ids
-            $data['payment_hash'] = $jwt->{'r_hash'}; // send payment hash
-
-            // BLN Publisher doesn't save comment, so lets save the pubkey there
-            // initially for ease of reference. We will adjust this after payment
-            // to reflect delivery of credits to user.
-            global $wpdb;
-            $wpdb->update($wpdb->prefix.'lightning_publisher_payments', [
-                'comment' => $pubkey,
-            ], ['payment_hash' => $jwt->{'r_hash'}]);
-
-            // Return the invoice data
-            wp_send_json_success($data);
-        } else {
-            // BLN not active - add 100 credits
-            global $wpdb;
-            $player = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.CAGAME_TABLE.' WHERE pubkey = %s', $pubkey));
-            if (!$player) {
-                wp_send_json_error('Player not found.');
-            }
-            $new_credits = $player->credits + 100;
-            $wpdb->update(CAGAME_TABLE, ['credits' => $new_credits], ['pubkey' => $pubkey]);
             wp_send_json_success([
-                'credits' => $new_credits,
+                'credits' => $credits,
                 'message' => 'Lightning payments unavailable. Added 100 credits instead.',
             ]);
         }
+
+        // 1 credit = 10 sats
+        $credits = intdiv(max(0, (int) ($_POST['amount'] ?? 0)), self::SATS_PER_CREDIT);
+        if ($credits < 1) {
+            wp_send_json_error(['message' => 'Please deposit at least 10 sats for 1 credit']);
+        }
+
+        $payment = $this->paidinsats('POST', '/api/v1/payments', [
+            'amount' => $credits * self::SATS_PER_CREDIT,
+            'currency' => 'SAT',
+            'reference' => 'Crown & Anchor credits',
+            'external_reference' => 'cagame:'.$pubkey,
+            'memo' => "Crown & Anchor: {$credits} credits",
+        ]);
+        if (empty($payment['payment_request'])) {
+            wp_send_json_error(['message' => 'There was a problem creating the invoice. Please contact us']);
+        }
+
+        wp_send_json_success([
+            'amount' => (int) $payment['total_sats'],
+            'token' => $payment['id'],
+            'payment_request' => $payment['payment_request'],
+            'payment_hash' => $payment['payment_hash'],
+        ]);
     }
 
-    // Ajax Handler: Check Lightning Payment
+    /**
+     * Polled by the game: credits the player once their invoice is paid.
+     */
     public function ajax_verify_payment()
     {
         // Sanitize and verify nonce
         $nonce = sanitize_text_field($_POST['nonce'] ?? '');
         if (!wp_verify_nonce($nonce, 'ca_game_nonce')) {
-            wp_send_json_error('Nonce verification failed');
+            wp_send_json_error(['message' => 'Nonce verification failed']);
         }
 
         // Validate pubkey
@@ -149,90 +97,81 @@ class LightningPayments
             wp_send_json_error(['message' => 'Invalid public key']);
         }
 
-        // Validate token
+        // Validate token (the payment id)
         $token = sanitize_text_field($_POST['token'] ?? '');
-        if (!$token) {
-            wp_send_json_error(['message' => __('Invalid token.', 'nostrly')]);
+        if (!preg_match('/^[0-9a-f]{16,64}$/', $token)) {
+            wp_send_json_error(['message' => 'Invalid token.']);
         }
 
-        // Check invoice payment status
-        // We can't use WP REST API internally as the endpoint uses wp_send_json
-        // and this terminates script execution immediately
-        try {
-            $api_url = get_rest_url().'lnp-alby/v1/invoices/verify';
-            $response = wp_remote_post($api_url, [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
-                'body' => json_encode(['token' => $token]),
-                'data_format' => 'body',
-            ]);
-        } catch (Exception $e) {
-            error_log($e->getMessage());
-            wp_send_json_error(['message' => $e->getMessage()]);
+        $payment = $this->paidinsats('GET', '/api/v1/payments/'.$token);
+        $state = $payment['state'] ?? '';
+        if ('pending' === $state) {
+            wp_send_json_success(['settled' => false]); // not paid yet, but ok to wait
+        }
+        if ('paid' !== $state || ($payment['external_reference'] ?? '') !== 'cagame:'.$pubkey) {
+            wp_send_json_error(['message' => 'Invoice not found or expired.']);
         }
 
-        // Check for errors in the API response
-        if (is_wp_error($response)) {
-            wp_send_json_error(['message' => $response->get_error_message()]);
-
-            return;
+        // add_option fails if the row exists, so a payment is credited once.
+        // ponytail: one option row per paid top-up; use a table if volume matters
+        $paid_key = 'cagame_paid_'.$token;
+        if (!add_option($paid_key, time(), '', false)) {
+            wp_send_json_error(['message' => 'This payment has already been credited.']);
+        }
+        $credits = $this->add_credits($pubkey, intdiv((int) $payment['total_sats'], self::SATS_PER_CREDIT));
+        if (null === $credits) {
+            delete_option($paid_key);
+            wp_send_json_error(['message' => 'Player not found.']);
         }
 
-        // Check invoice payment status
-        // Expected: 200 (paid), 402 (not paid), or 404 (not found)
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-        $code = wp_remote_retrieve_response_code($response);
-        if (empty($body['settled']) && 200 != $code) {
-            if (402 == $code) {
-                // not paid yet, but ok to wait
-                wp_send_json_success($body);
-            }
-            // Bad news
-            wp_send_json_error(['message' => __('Invoice not found or expired.', 'nostrly')]);
-        }
+        wp_send_json_success(['credits' => $credits]);
+    }
 
-        // Decode the token to get payment hash (r_hash) and amount
-        try {
-            $jwt = JWT\JWT::decode($token, new JWT\Key(BLN_PUBLISHER_PAYWALL_JWT_KEY, BLN_PUBLISHER_PAYWALL_JWT_ALGORITHM));
-            // error_log(print_r($jwt, true));
-        } catch (Exception $e) {
-            error_log(__METHOD__.' - Error: '.$e->getMessage());
-            wp_send_json_error(['message' => 'There was a problem verifying the invoice. Please contact us']);
-        }
-
-        // Check if already credited
+    /**
+     * Adds credits to a player in one statement.
+     *
+     * @return null|int the new balance, null if there is no such player
+     */
+    private function add_credits(string $pubkey, int $credits): ?int
+    {
         global $wpdb;
-        $payment_hash = $jwt->{'r_hash'};
-        $payment = $wpdb->get_row($wpdb->prepare(
-            "SELECT comment FROM {$wpdb->prefix}lightning_publisher_payments WHERE payment_hash = %s",
-            $payment_hash
+        $wpdb->query($wpdb->prepare(
+            'UPDATE '.CAGAME_TABLE.' SET credits = credits + %d WHERE pubkey = %s',
+            $credits,
+            $pubkey
         ));
-        if ($payment) {
-            if ($payment->comment !== $pubkey) { // If comment != pubkey, it's been processed
-                wp_send_json_error(['message' => 'This payment has already been credited.']);
-            }
-        } else {
-            wp_send_json_error(['message' => 'Payment record not found.']);
+        $balance = $wpdb->get_var($wpdb->prepare('SELECT credits FROM '.CAGAME_TABLE.' WHERE pubkey = %s', $pubkey));
+
+        return null === $balance ? null : (int) $balance;
+    }
+
+    /**
+     * Calls the Paid in Sats API with the key from wp-config.
+     *
+     * @return null|array decoded response, null on any failure
+     */
+    private function paidinsats(string $method, string $path, ?array $body = null): ?array
+    {
+        $base = defined('CAGAME_PIS_URL') ? CAGAME_PIS_URL : 'https://paidinsats.com';
+        $response = wp_remote_request($base.$path, [
+            'method' => $method,
+            'timeout' => 20,
+            'headers' => [
+                'Authorization' => 'Bearer '.CAGAME_PIS_API_KEY,
+                'Content-Type' => 'application/json',
+            ],
+            'body' => null === $body ? null : wp_json_encode($body),
+        ]);
+        $code = wp_remote_retrieve_response_code($response);
+        if (is_wp_error($response) || $code < 200 || $code > 299) {
+            $why = is_wp_error($response) ? $response->get_error_message() : $code.' '.wp_remote_retrieve_body($response);
+            error_log("crown-anchor: paidinsats {$method} {$path} failed: {$why}");
+
+            return null;
         }
+        $data = json_decode(wp_remote_retrieve_body($response), true);
 
-        // Ok, update player credits (1 credit = 10 sats)
-        $player = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.CAGAME_TABLE.' WHERE pubkey = %s', $pubkey));
-        if (!$player) {
-            wp_send_json_error('Player not found.');
-        }
-        $credits = (int) floor($jwt->{'amount'} / 10);
-        $new_credits = $player->credits + $credits;
-        $wpdb->update(CAGAME_TABLE, ['credits' => $new_credits], ['pubkey' => $pubkey]);
-
-        // Mark payment as credited
-        $wpdb->update(
-            $wpdb->prefix.'lightning_publisher_payments',
-            ['comment' => 'CREDITED:'.$pubkey],
-            ['payment_hash' => $payment_hash]
-        );
-
-        wp_send_json_success(['credits' => $new_credits]);
+        return is_array($data) ? $data : null;
     }
 
     private function sanitize_pubkey($hexpub)

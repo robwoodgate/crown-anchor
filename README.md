@@ -13,7 +13,7 @@ The aim of this project is to demonstrate:
 
 -   A method to ensure games of chance are provably fair
 -   How a website / game can use Nostr for authentication
--   How GetAlby's powerful [Bitcoin Lightning Publisher for WordPress](https://github.com/getAlby/lightning-publisher-wordpress/) can be used as a payment engine
+-   How the [Paid in Sats](https://paidinsats.com) API can be used as a payment engine: create a Lightning invoice, show it on your own page, and credit the player once it is paid
 -   How [Nostly Cashu Redeem](https://www.nostrly.com/cashu-redeem/) can be used to accept one-click Lightning payments using [Cashu ecash](https://cashu.space)
 
 
@@ -77,7 +77,18 @@ Your WordPress server MUST have the PHP-GMP extension enabled, which is required
 
 Your WordPress site MUST use SSL (https://) for your browser to be able to calculate and confirm the result hashes.
 
-If you wish to take payments, you need to install and configure the [Bitcoin Lightning Publisher for WordPress plugin](https://github.com/getAlby/lightning-publisher-wordpress/) for payment integation.
+### Taking payments
+
+Credits cost 10 sats each and are paid for with a Lightning invoice from [Paid in Sats](https://paidinsats.com). Create an account, make an API key in the dashboard (Developer section), and add it to your `wp-config.php` file:
+
+```
+/** Crown and Anchor Game - Paid in Sats API key */
+define('CAGAME_PIS_API_KEY', 'gp_live_...');
+```
+
+Without a key, payments are off and the top-up button gives 100 free credits.
+
+The integration is `lib/class-lightning-payments.php`: one call to create the payment, and one to read its state while the invoice is on screen.
 
 ### Caching Considerations
 The `[crown_anchor_game]` shortcode page uses dynamic nonces for AJAX requests. To prevent caching issues, the plugin sets `DONOTCACHEPAGE` and no-cache headers. Ensure your caching plugin (e.g., WP Rocket, W3 Total Cache) respects `DONOTCACHEPAGE`, or exclude the shortcode page URL (e.g., `/game-page/`) from caching. If you use Litespeed Cache, it should just work ok.
