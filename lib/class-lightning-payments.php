@@ -111,9 +111,12 @@ class LightningPayments
         if ('paid' !== $state || ($payment['external_reference'] ?? '') !== 'cagame:'.$pubkey) {
             wp_send_json_error(['message' => 'Invoice not found or expired.']);
         }
+        // Only a recent payment is credited, so its marker need not be kept forever
+        if (time() - (int) strtotime((string) ($payment['paid_at'] ?? '')) > DAY_IN_SECONDS) {
+            wp_send_json_error(['message' => 'This payment is too old to credit. Please contact us']);
+        }
 
-        // The unique option name makes this insert succeed once per payment.
-        // ponytail: one option row per paid top-up; use a table if volume matters
+        // The unique option name makes this insert succeed once per payment
         global $wpdb;
         $paid_key = 'cagame_paid_'.$token;
         $first = $wpdb->query($wpdb->prepare(
@@ -129,6 +132,12 @@ class LightningPayments
             $wpdb->delete($wpdb->options, ['option_name' => $paid_key]);
             wp_send_json_error(['message' => 'Player not found.']);
         }
+        // Markers older than the crediting window can never match again
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
+            $wpdb->esc_like('cagame_paid_').'%',
+            time() - 2 * DAY_IN_SECONDS
+        ));
 
         wp_send_json_success(['credits' => $credits]);
     }
