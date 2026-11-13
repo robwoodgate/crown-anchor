@@ -245,8 +245,8 @@ jQuery(function($) {
         modalHtml += '<div id="close-modal">X</div>';
         modalHtml += '<p class="strong">Add Credits</p>';
         modalHtml += '<div id="ca-deposit-select">';
-        modalHtml += '<div id="ca-deposit-pricing">1 credit = 10 sats (minimum 100 sats)</div>';
-        modalHtml += '<input id="deposit-amount" type="number" min="100" step="10" placeholder="Enter amount (sats)">';
+        modalHtml += '<div id="ca-deposit-pricing">1 credit = 10 sats</div>';
+        modalHtml += '<input id="deposit-amount" type="number" min="100" step="10" placeholder="Sats (minimum 100)">';
         modalHtml += '<div id="credit-display">Credits: 0</div>';
         modalHtml += '<div><button id="ca-pay-button">Pay Now</button></div>';
         modalHtml += '</div>';
